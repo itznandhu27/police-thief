@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Hidden Empire — Pass & Play</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #c9a84c;
+    --gold-light: #e8c97a;
+    --gold-dim: #7a6030;
+    --crimson: #8b1a1a;
+    --crimson-bright: #c0392b;
+    --emerald: #1a5c3a;
+    --emerald-bright: #27ae60;
+    --ink: #0a0a0f;
+    --ink-mid: #111118;
+    --ink-light: #1a1a28;
+    --parchment: #f5eed8;
+    --parchment-dim: #c8b98a;
+    --silver: #a0a8b8;
+    --white: #f0ece0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    background: var(--ink);
+    font-family: 'Raleway', sans-serif;
+    color: var(--white);
+    touch-action: manipulation;
+  }
+
+  /* ── SCREENS ── */
+  .screen {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 24px 20px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.5s ease;
+    overflow-y: auto;
+  }
+  .screen.active { opacity: 1; pointer-events: all; }
+
+  /* ── BACKGROUND TEXTURES ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 20%, rgba(201,168,76,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(139,26,26,0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 50%, rgba(26,26,40,1) 0%, var(--ink) 100%);
+    z-index: -2;
+  }
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c9a84c' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    z-index: -1; pointer-events: none;
+  }
+
+  /* ── EMBLEM ── */
+  .emblem {
+    width: 80px; height: 80px;
+    border: 2px solid var(--gold);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px;
+    margin-bottom: 16px;
+    background: radial-gradient(circle, rgba(201,168,76,0.1), transparent);
+    box-shadow: 0 0 30px rgba(201,168,76,0.2), inset 0 0 20px rgba(201,168,76,0.05);
+    flex-shrink: 0;
+    animation: emblemPulse 3s ease-in-out infinite;
+  }
+  @keyframes emblemPulse {
+    0%,100% { box-shadow: 0 0 30px rgba(201,168,76,0.2), inset 0 0 20px rgba(201,168,76,0.05); }
+    50%      { box-shadow: 0 0 50px rgba(201,168,76,0.35), inset 0 0 30px rgba(201,168,76,0.1); }
+  }
+
+  .game-title {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: clamp(18px, 5vw, 26px);
+    color: var(--gold);
+    letter-spacing: 2px;
+    text-align: center;
+    text-shadow: 0 0 20px rgba(201,168,76,0.4);
+  }
+  .game-subtitle {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    color: var(--gold-dim);
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    margin-top: 6px;
+    text-align: center;
+  }
+  .divider {
+    width: 120px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin: 20px auto;
+  }
+
+  /* ── BUTTONS ── */
+  .btn {
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 16px 36px;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    min-width: 200px;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: rgba(255,255,255,0.1);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .btn:active::before { opacity: 1; }
+
+  .btn-gold {
+    background: linear-gradient(135deg, var(--gold-dim), var(--gold), var(--gold-dim));
+    color: var(--ink);
+    font-weight: 700;
+    box-shadow: 0 4px 20px rgba(201,168,76,0.3);
+  }
+  .btn-gold:active { transform: scale(0.97); box-shadow: 0 2px 10px rgba(201,168,76,0.2); }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--gold);
+    border: 1px solid var(--gold-dim);
+    font-weight: 600;
+  }
+  .btn-outline:active { transform: scale(0.97); background: rgba(201,168,76,0.05); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--silver);
+    border: 1px solid rgba(160,168,184,0.3);
+    font-size: 12px;
+    padding: 12px 28px;
+    min-width: 160px;
+  }
+
+  .btn-danger {
+    background: linear-gradient(135deg, #5a0a0a, var(--crimson-bright), #5a0a0a);
+    color: var(--white);
+    font-weight: 700;
+    box-shadow: 0 4px 20px rgba(192,57,43,0.3);
+  }
+  .btn-danger:active { transform: scale(0.97); }
+
+  /* ── INPUTS ── */
+  .input-group { width: 100%; margin-bottom: 12px; }
+  .input-label {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: block;
+  }
+  .input-field {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 2px;
+    padding: 14px 16px;
+    font-family: 'Raleway', sans-serif;
+    font-size: 16px;
+    color: var(--white);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .input-field:focus { border-color: var(--gold); background: rgba(201,168,76,0.06); }
+  .input-field::placeholder { color: rgba(255,255,255,0.2); }
+
+  /* ── NUMBER PICKER ── */
+  .number-picker {
+    display: flex; align-items: center; gap: 0;
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 2px; overflow: hidden;
+  }
+  .num-btn {
+    width: 56px; height: 56px;
+    background: rgba(201,168,76,0.08);
+    border: none;
+    color: var(--gold);
+    font-size: 24px;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-family: 'Cinzel', serif;
+    flex-shrink: 0;
+  }
+  .num-btn:active { background: rgba(201,168,76,0.2); }
+  .num-display {
+    flex: 1; text-align: center;
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 32px;
+    color: var(--gold);
+    background: transparent;
+    padding: 12px 0;
+  }
+
+  /* ── PLAYER NAME ROWS ── */
+  #name-inputs { width: 100%; max-height: 50vh; overflow-y: auto; padding-right: 4px; }
+  .name-row {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 10px;
+  }
+  .player-num {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    color: var(--gold-dim);
+    width: 24px; text-align: right; flex-shrink: 0;
+  }
+  .name-row .input-field { margin: 0; }
+
+  /* ── HEADLINE TEXT ── */
+  .headline {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: clamp(22px, 6vw, 32px);
+    color: var(--gold);
+    text-align: center;
+    line-height: 1.3;
+    text-shadow: 0 0 30px rgba(201,168,76,0.3);
+  }
+  .headline.huge {
+    font-size: clamp(28px, 8vw, 48px);
+  }
+  .subheadline {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(14px, 3.5vw, 18px);
+    color: var(--parchment-dim);
+    text-align: center;
+    line-height: 1.5;
+    margin-top: 10px;
+  }
+  .body-text {
+    font-size: 15px;
+    color: var(--silver);
+    text-align: center;
+    line-height: 1.7;
+    max-width: 320px;
+  }
+
+  /* ── ROLE CARD ── */
+  .role-card {
+    width: 220px; min-height: 300px;
+    border: 2px solid var(--gold-dim);
+    border-radius: 8px;
+    background: linear-gradient(160deg, var(--ink-light), var(--ink-mid));
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 30px 20px;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(201,168,76,0.1);
+    margin: 20px 0;
+  }
+  .role-card::before {
+    content: '';
+    position: absolute; inset: 6px;
+    border: 1px solid rgba(201,168,76,0.15);
+    border-radius: 4px; pointer-events: none;
+  }
+  .role-card-corner {
+    position: absolute;
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    color: var(--gold-dim);
+    padding: 6px 10px;
+  }
+  .role-card-corner.tl { top: 8px; left: 8px; }
+  .role-card-corner.br { bottom: 8px; right: 8px; transform: rotate(180deg); }
+
+  .role-icon { font-size: 64px; margin-bottom: 16px; filter: drop-shadow(0 0 12px rgba(201,168,76,0.4)); }
+  .role-name {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 20px;
+    color: var(--gold);
+    text-align: center;
+    margin-bottom: 8px;
+    text-shadow: 0 0 15px rgba(201,168,76,0.5);
+  }
+  .role-desc {
+    font-size: 13px;
+    color: var(--silver);
+    text-align: center;
+    line-height: 1.6;
+  }
+
+  /* Role color variants */
+  .role-thief .role-card { border-color: #8b1a1a; box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(139,26,26,0.2); }
+  .role-thief .role-card::before { border-color: rgba(139,26,26,0.3); }
+  .role-thief .role-name { color: #e05555; text-shadow: 0 0 15px rgba(192,57,43,0.5); }
+  .role-police .role-card { border-color: #1a3a6b; box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(26,58,107,0.2); }
+  .role-police .role-card::before { border-color: rgba(26,58,107,0.3); }
+  .role-police .role-name { color: #5b9bd5; text-shadow: 0 0 15px rgba(91,155,213,0.5); }
+
+  /* ── PASS SCREEN ── */
+  .pass-card {
+    width: 100%; max-width: 360px;
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 4px;
+    background: rgba(255,255,255,0.03);
+    padding: 30px 24px;
+    text-align: center;
+    margin: 20px 0;
+  }
+  .pass-player-name {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: clamp(24px, 6vw, 36px);
+    color: var(--gold);
+    margin-top: 12px;
+    text-shadow: 0 0 20px rgba(201,168,76,0.4);
+    word-break: break-word;
+  }
+  .pass-instruction {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    letter-spacing: 3px;
+    color: var(--parchment-dim);
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+
+  /* ── TIMER ── */
+  .timer-ring {
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin: 20px 0;
+  }
+  .timer-svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+  .timer-track { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 6; }
+  .timer-progress {
+    fill: none; stroke: var(--gold); stroke-width: 6;
+    stroke-linecap: round;
+    stroke-dasharray: 440; stroke-dashoffset: 0;
+    transition: stroke 0.5s;
+  }
+  .timer-number {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 52px;
+    color: var(--gold);
+    text-shadow: 0 0 20px rgba(201,168,76,0.5);
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── PLAYER SELECT ── */
+  .player-list { width: 100%; max-width: 380px; }
+  .player-item {
+    width: 100%;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 4px;
+    padding: 18px 20px;
+    margin-bottom: 10px;
+    font-family: 'Cinzel', serif;
+    font-size: 16px;
+    color: var(--white);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .player-item:active { transform: scale(0.98); }
+  .player-item.selected {
+    border-color: var(--crimson-bright);
+    background: rgba(192,57,43,0.12);
+    color: var(--white);
+    box-shadow: 0 0 20px rgba(192,57,43,0.2);
+  }
+  .player-item .player-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(201,168,76,0.1);
+    border: 1px solid rgba(201,168,76,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+    font-family: 'Cinzel', serif;
+    color: var(--gold);
+  }
+  .player-item.selected .player-avatar {
+    background: rgba(192,57,43,0.2);
+    border-color: var(--crimson-bright);
+    color: var(--white);
+  }
+
+  /* ── RESULT SCREEN ── */
+  .result-banner {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: clamp(26px, 7vw, 42px);
+    text-align: center;
+    line-height: 1.2;
+    padding: 0 10px;
+  }
+  .result-caught { color: var(--crimson-bright); text-shadow: 0 0 40px rgba(192,57,43,0.5); }
+  .result-escaped { color: var(--emerald-bright); text-shadow: 0 0 40px rgba(39,174,96,0.5); }
+
+  /* ── REVEAL ROLES ── */
+  .reveal-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; width: 100%; max-width: 380px;
+    margin: 16px 0;
+  }
+  .reveal-item {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 4px;
+    padding: 14px 12px;
+    text-align: center;
+    transition: all 0.3s;
+  }
+  .reveal-item.thief { border-color: rgba(139,26,26,0.5); background: rgba(139,26,26,0.08); }
+  .reveal-item.police { border-color: rgba(26,58,107,0.5); background: rgba(26,58,107,0.08); }
+  .reveal-item .r-icon { font-size: 24px; margin-bottom: 4px; }
+  .reveal-item .r-name {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    color: var(--white);
+    word-break: break-word;
+    margin-bottom: 4px;
+  }
+  .reveal-item .r-role {
+    font-size: 11px;
+    color: var(--silver);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .reveal-item.thief .r-role { color: #e05555; }
+  .reveal-item.police .r-role { color: #5b9bd5; }
+
+  /* ── LEADERBOARD ── */
+  .leaderboard { width: 100%; max-width: 380px; }
+  .lb-row {
+    display: flex; align-items: center;
+    padding: 14px 16px; margin-bottom: 8px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 4px;
+    gap: 14px;
+    transition: all 0.3s;
+  }
+  .lb-row.first { border-color: var(--gold); background: rgba(201,168,76,0.08); }
+  .lb-row.second { border-color: var(--silver); background: rgba(160,168,184,0.06); }
+  .lb-row.third { border-color: #cd7f32; background: rgba(205,127,50,0.06); }
+  .lb-rank {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 16px;
+    width: 28px; text-align: center; flex-shrink: 0;
+    color: var(--gold-dim);
+  }
+  .lb-row.first .lb-rank { color: var(--gold); }
+  .lb-row.second .lb-rank { color: var(--silver); }
+  .lb-row.third .lb-rank { color: #cd7f32; }
+  .lb-name {
+    flex: 1;
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    color: var(--white);
+    word-break: break-word;
+  }
+  .lb-score {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 18px;
+    color: var(--gold);
+  }
+  .lb-delta {
+    font-size: 12px;
+    color: var(--emerald-bright);
+    font-weight: 600;
+    min-width: 30px; text-align: right;
+  }
+
+  /* ── PROGRESS DOTS ── */
+  .progress-dots {
+    display: flex; gap: 6px;
+    margin: 10px 0;
+    justify-content: center; flex-wrap: wrap;
+  }
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: rgba(201,168,76,0.2);
+    transition: background 0.3s;
+  }
+  .dot.done { background: var(--gold); }
+  .dot.current { background: var(--gold); box-shadow: 0 0 8px rgba(201,168,76,0.6); }
+
+  /* ── SECTION LABEL ── */
+  .section-label {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.8); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  @keyframes cardFlip {
+    0%   { transform: rotateY(90deg) scale(0.8); opacity: 0; }
+    100% { transform: rotateY(0deg) scale(1); opacity: 1; }
+  }
+  @keyframes pulse {
+    0%,100% { transform: scale(1); }
+    50%      { transform: scale(1.05); }
+  }
+  @keyframes resultPop {
+    0%   { transform: scale(0.5); opacity: 0; }
+    70%  { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+
+  .anim-fade-up  { animation: fadeInUp 0.5s ease forwards; }
+  .anim-fade-dn  { animation: fadeInDown 0.4s ease forwards; }
+  .anim-scale    { animation: scaleIn 0.4s ease forwards; }
+  .anim-card     { animation: cardFlip 0.5s ease forwards; }
+  .anim-result   { animation: resultPop 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+
+  .scroll-inner {
+    width: 100%; display: flex; flex-direction: column;
+    align-items: center; padding: 20px 0 40px;
+    gap: 0;
+  }
+
+  /* Round badge */
+  .round-badge {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--ink);
+    background: var(--gold);
+    padding: 5px 14px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    font-weight: 700;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.3); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ SCREEN 1: TITLE ═══════════════ -->
+<div class="screen active" id="s-title">
+  <div class="emblem">👑</div>
+  <div class="game-title">Hidden Empire</div>
+  <div class="game-subtitle">Pass &amp; Play</div>
+  <div class="divider"></div>
+  <p class="body-text" style="margin-bottom:32px">One device. Multiple players.<br>Secrets, deception, and intrigue.</p>
+  <button class="btn btn-gold anim-fade-up" onclick="goTo('s-setup')" style="animation-delay:.2s">Begin Game</button>
+</div>
+
+<!-- ═══════════════ SCREEN 2: SETUP – PLAYER COUNT ═══════════════ -->
+<div class="screen" id="s-setup">
+  <div class="scroll-inner">
+    <div class="section-label">Step 1 of 2 — Players</div>
+    <div class="headline" style="margin-bottom:8px">How many<br>players?</div>
+    <div class="divider"></div>
+    <div class="number-picker" style="margin:20px 0 32px">
+      <button class="num-btn" onclick="changeCount(-1)">−</button>
+      <div class="num-display" id="player-count-display">4</div>
+      <button class="num-btn" onclick="changeCount(1)">+</button>
+    </div>
+    <button class="btn btn-gold" onclick="goToNames()">Continue</button>
+    <button class="btn btn-ghost" style="margin-top:12px" onclick="goTo('s-title')">Back</button>
+  </div>
+</div>
+
+<!-- ═══════════════ SCREEN 3: SETUP – NAMES ═══════════════ -->
+<div class="screen" id="s-names">
+  <div class="scroll-inner">
+    <div class="section-label">Step 2 of 2 — Names</div>
+    <div class="headline" style="margin-bottom:4px">Enter player<br>names</div>
+    <div class="divider"></div>
+    <div id="name-inputs" style="width:100%;max-width:380px;margin:16px 0"></div>
+    <button class="btn btn-gold" onclick="startGame()">Begin Round 1</button>
+    <button class="btn btn-ghost" style="margin-top:12px" onclick="goTo('s-setup')">Back</button>
+  </div>
+</div>
+
+<!-- ═══════════════ SCREEN 4: PASS PHONE ═══════════════ -->
+<div class="screen" id="s-pass">
+  <div class="section-label" id="pass-step-label">Role 1 of 4</div>
+  <div class="pass-card">
+    <div style="font-size:40px">📱</div>
+    <div class="pass-instruction">Pass the phone to</div>
+    <div class="pass-player-name" id="pass-name">Player</div>
+  </div>
+  <div class="progress-dots" id="pass-dots"></div>
+  <button class="btn btn-gold" style="margin-top:8px" onclick="revealRole()">I have the phone</button>
+</div>
+
+<!-- ═══════════════ SCREEN 5: ROLE REVEAL ═══════════════ -->
+<div class="screen" id="s-role">
+  <div class="section-label" id="role-step-label">Your Role</div>
+  <div id="role-wrapper" class="anim-card">
+    <div class="role-card" id="role-card">
+      <div class="role-card-corner tl" id="role-corner-tl">HEC</div>
+      <div class="role-card-corner br" id="role-corner-br">HEC</div>
+      <div class="role-icon" id="role-icon">👤</div>
+      <div class="role-name" id="role-name">Role</div>
+      <div class="role-desc" id="role-desc">Description</div>
+    </div>
+  </div>
+  <p class="body-text" style="font-size:13px;margin-top:4px;opacity:0.6">Memorise your role, then tap Next</p>
+  <button class="btn btn-outline" style="margin-top:16px" onclick="nextRoleOrDiscuss()">Next →</button>
+</div>
+
+<!-- ═══════════════ SCREEN 6: DISCUSSION ═══════════════ -->
+<div class="screen" id="s-discuss">
+  <div class="emblem" style="font-size:32px">🗣️</div>
+  <div class="headline" style="margin-bottom:8px">Put phone<br>down &amp; discuss</div>
+  <div class="subheadline" style="margin-bottom:20px">Who is the thief among you?</div>
+  <div class="timer-ring" id="timer-ring">
+    <svg class="timer-svg" viewBox="0 0 160 160">
+      <circle class="timer-track" cx="80" cy="80" r="70"/>
+      <circle class="timer-progress" id="timer-circle" cx="80" cy="80" r="70"/>
+    </svg>
+    <div class="timer-number" id="timer-num">20</div>
+  </div>
+  <p class="body-text" style="font-size:13px;opacity:0.5;margin-top:8px">Timer will auto-advance</p>
+  <button class="btn btn-ghost" style="margin-top:16px" onclick="skipTimer()">Skip →</button>
+</div>
+
+<!-- ═══════════════ SCREEN 7: POLICE ACCUSATION ═══════════════ -->
+<div class="screen" id="s-police">
+  <div class="section-label">Police Phase</div>
+  <div class="headline" style="margin-bottom:6px">Pass phone<br>to Police 👮</div>
+  <div class="divider"></div>
+  <div class="subheadline" style="margin-bottom:24px">Select who you think is the Thief</div>
+  <div class="player-list" id="police-list"></div>
+  <button class="btn btn-danger" id="accuse-btn" onclick="makeAccusation()" style="margin-top:16px;opacity:0.4;pointer-events:none">Accuse</button>
+</div>
+
+<!-- ═══════════════ SCREEN 8: RESULT ═══════════════ -->
+<div class="screen" id="s-result">
+  <div class="result-banner anim-result" id="result-banner">THIEF<br>CAUGHT</div>
+  <div class="divider"></div>
+  <div class="subheadline" id="result-sub" style="margin-bottom:24px"></div>
+
+  <div class="section-label">All Roles Revealed</div>
+  <div class="reveal-grid" id="reveal-grid"></div>
+
+  <button class="btn btn-outline" style="margin-top:8px" onclick="goTo('s-scores')">See Scores →</button>
+</div>
+
+<!-- ═══════════════ SCREEN 9: LEADERBOARD ═══════════════ -->
+<div class="screen" id="s-scores">
+  <div class="scroll-inner">
+    <div class="round-badge" id="round-badge">Round 1 Complete</div>
+    <div class="headline" style="margin-bottom:6px;font-size:22px">Leaderboard</div>
+    <div class="divider"></div>
+    <div class="leaderboard" id="leaderboard" style="margin:16px 0"></div>
+    <button class="btn btn-gold" onclick="nextRound()">Next Round →</button>
+    <button class="btn btn-ghost" style="margin-top:12px" onclick="endGame()">End Game</button>
+  </div>
+</div>
+
+<!-- ═══════════════ SCREEN 10: END GAME ═══════════════ -->
+<div class="screen" id="s-end">
+  <div class="emblem" style="font-size:36px">🏆</div>
+  <div class="headline">Final Scores</div>
+  <div class="divider"></div>
+  <div class="leaderboard" id="final-lb" style="width:100%;max-width:380px;margin:16px 0"></div>
+  <div class="subheadline" id="winner-text" style="margin-bottom:24px"></div>
+  <button class="btn btn-gold" onclick="resetAll()">Play Again</button>
+  <button class="btn btn-ghost" style="margin-top:12px" onclick="goTo('s-title')">Main Menu</button>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────
+const STATE = {
+  playerCount: 4,
+  players: [],        // [{name, score}]
+  roles: [],          // assigned roles per round
+  currentRoleIdx: 0,
+  round: 1,
+  policeIdx: -1,
+  accusedIdx: -1,
+  thiefIdx: -1,
+  thiefCaught: false,
+  timerInterval: null,
+  timerSec: 20,
+  selectedAccused: -1,
+};
+
+// ─── ROLES ───────────────────────────────────────────────
+const ROLE_DEFS = {
+  thief: {
+    label: 'Thief',
+    icon: '🦹',
+    desc: 'You are the Thief. Blend in. Survive the vote. Do NOT reveal yourself.',
+    color: 'thief'
+  },
+  police: {
+    label: 'Police',
+    icon: '👮',
+    desc: 'You are the Police. Observe. Detect. Accuse the Thief at the end.',
+    color: 'police'
+  },
+  citizen: {
+    label: 'Citizen',
+    icon: '🧑',
+    desc: 'You are a Citizen. Discuss and help the Police identify the Thief.',
+    color: ''
+  }
+};
+
+// ─── SCREEN NAV ──────────────────────────────────────────
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ─── SETUP ───────────────────────────────────────────────
+let playerCountVal = 4;
+
+function changeCount(delta) {
+  playerCountVal = Math.max(3, Math.min(10, playerCountVal + delta));
+  document.getElementById('player-count-display').textContent = playerCountVal;
+}
+
+function goToNames() {
+  STATE.playerCount = playerCountVal;
+  const container = document.getElementById('name-inputs');
+  container.innerHTML = '';
+  for (let i = 0; i < STATE.playerCount; i++) {
+    const row = document.createElement('div');
+    row.className = 'name-row';
+    row.innerHTML = `
+      <span class="player-num">${i + 1}</span>
+      <input class="input-field" type="text" placeholder="Player ${i + 1}" id="pname-${i}" maxlength="20">
+    `;
+    container.appendChild(row);
+  }
+  goTo('s-names');
+  setTimeout(() => document.getElementById('pname-0')?.focus(), 300);
+}
+
+function startGame() {
+  STATE.players = [];
+  for (let i = 0; i < STATE.playerCount; i++) {
+    const val = document.getElementById(`pname-${i}`)?.value.trim() || `Player ${i + 1}`;
+    STATE.players.push({ name: val, score: 0 });
+  }
+  STATE.round = 1;
+  beginRound();
+}
+
+// ─── ROUND LOGIC ─────────────────────────────────────────
+function buildRoles(n) {
+  // Always 1 thief, 1 police, rest citizens
+  const roles = ['thief', 'police'];
+  for (let i = 2; i < n; i++) roles.push('citizen');
+  return shuffle(roles);
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function beginRound() {
+  STATE.roles = buildRoles(STATE.playerCount);
+  STATE.currentRoleIdx = 0;
+  STATE.policeIdx = STATE.roles.indexOf('police');
+  STATE.thiefIdx = STATE.roles.indexOf('thief');
+  STATE.accusedIdx = -1;
+  STATE.selectedAccused = -1;
+  showPassScreen();
+}
+
+// ─── PASS SCREEN ─────────────────────────────────────────
+function showPassScreen() {
+  const idx = STATE.currentRoleIdx;
+  const player = STATE.players[idx];
+
+  document.getElementById('pass-name').textContent = player.name;
+  document.getElementById('pass-step-label').textContent = `Role ${idx + 1} of ${STATE.playerCount}`;
+
+  // dots
+  const dots = document.getElementById('pass-dots');
+  dots.innerHTML = '';
+  for (let i = 0; i < STATE.playerCount; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i < idx ? ' done' : i === idx ? ' current' : '');
+    dots.appendChild(d);
+  }
+  goTo('s-pass');
+}
+
+function revealRole() {
+  const idx = STATE.currentRoleIdx;
+  const roleKey = STATE.roles[idx];
+  const def = ROLE_DEFS[roleKey];
+
+  document.getElementById('role-step-label').textContent = `${STATE.players[idx].name} — Your Role`;
+
+  const card = document.getElementById('role-card');
+  card.className = 'role-card' + (def.color ? ` role-${def.color}` : '');
+
+  document.getElementById('role-icon').textContent = def.icon;
+  document.getElementById('role-name').textContent = def.label;
+  document.getElementById('role-desc').textContent = def.desc;
+
+  // re-trigger animation
+  const wrapper = document.getElementById('role-wrapper');
+  wrapper.style.animation = 'none';
+  void wrapper.offsetWidth;
+  wrapper.style.animation = '';
+  wrapper.className = 'anim-card';
+
+  goTo('s-role');
+}
+
+function nextRoleOrDiscuss() {
+  STATE.currentRoleIdx++;
+  if (STATE.currentRoleIdx < STATE.playerCount) {
+    showPassScreen();
+  } else {
+    startDiscussion();
+  }
+}
+
+// ─── DISCUSSION ──────────────────────────────────────────
+function startDiscussion() {
+  goTo('s-discuss');
+  STATE.timerSec = 20;
+  updateTimer(20, 20);
+
+  clearInterval(STATE.timerInterval);
+  STATE.timerInterval = setInterval(() => {
+    STATE.timerSec--;
+    updateTimer(STATE.timerSec, 20);
+    if (STATE.timerSec <= 0) {
+      clearInterval(STATE.timerInterval);
+      showPolicePhase();
+    }
+  }, 1000);
+}
+
+function updateTimer(sec, max) {
+  document.getElementById('timer-num').textContent = sec;
+  const circumference = 2 * Math.PI * 70; // r=70
+  const progress = (sec / max) * circumference;
+  const circle = document.getElementById('timer-circle');
+  circle.style.strokeDashoffset = circumference - progress;
+
+  // Color shift
+  if (sec <= 5) {
+    circle.style.stroke = '#e05555';
+    document.getElementById('timer-num').style.color = '#e05555';
+  } else if (sec <= 10) {
+    circle.style.stroke = '#e09a55';
+    document.getElementById('timer-num').style.color = '#e09a55';
+  } else {
+    circle.style.stroke = 'var(--gold)';
+    document.getElementById('timer-num').style.color = 'var(--gold)';
+  }
+}
+
+function skipTimer() {
+  clearInterval(STATE.timerInterval);
+  showPolicePhase();
+}
+
+// ─── POLICE PHASE ────────────────────────────────────────
+function showPolicePhase() {
+  STATE.selectedAccused = -1;
+  document.getElementById('accuse-btn').style.opacity = '0.4';
+  document.getElementById('accuse-btn').style.pointerEvents = 'none';
+
+  const list = document.getElementById('police-list');
+  list.innerHTML = '';
+
+  STATE.players.forEach((p, i) => {
+    if (i === STATE.policeIdx) return; // police can't accuse themselves
+    const item = document.createElement('button');
+    item.className = 'player-item';
+    item.dataset.idx = i;
+    item.innerHTML = `
+      <div class="player-avatar">${p.name.charAt(0).toUpperCase()}</div>
+      <span>${p.name}</span>
+    `;
+    item.onclick = () => selectAccused(i);
+    list.appendChild(item);
+  });
+
+  goTo('s-police');
+}
+
+function selectAccused(idx) {
+  STATE.selectedAccused = idx;
+  document.querySelectorAll('.player-item').forEach(el => el.classList.remove('selected'));
+  document.querySelector(`.player-item[data-idx="${idx}"]`).classList.add('selected');
+  const btn = document.getElementById('accuse-btn');
+  btn.style.opacity = '1';
+  btn.style.pointerEvents = 'auto';
+}
+
+function makeAccusation() {
+  if (STATE.selectedAccused === -1) return;
+  STATE.accusedIdx = STATE.selectedAccused;
+  STATE.thiefCaught = STATE.accusedIdx === STATE.thiefIdx;
+  showResult();
+}
+
+// ─── RESULT ──────────────────────────────────────────────
+function showResult() {
+  const caught = STATE.thiefCaught;
+  const banner = document.getElementById('result-banner');
+  const sub = document.getElementById('result-sub');
+
+  banner.className = 'result-banner anim-result ' + (caught ? 'result-caught' : 'result-escaped');
+  banner.textContent = caught ? 'THIEF\nCAUGHT' : 'THIEF\nESCAPED';
+  banner.innerHTML = caught ? 'THIEF<br>CAUGHT' : 'THIEF<br>ESCAPED';
+
+  const thiefName = STATE.players[STATE.thiefIdx].name;
+  const accusedName = STATE.players[STATE.accusedIdx].name;
+  const policeName = STATE.players[STATE.policeIdx].name;
+
+  if (caught) {
+    sub.innerHTML = `<span style="color:var(--gold)">${policeName}</span> caught <span style="color:#e05555">${thiefName}</span>`;
+  } else {
+    sub.innerHTML = `<span style="color:#e05555">${thiefName}</span> escaped — ${accusedName} was innocent`;
+  }
+
+  // Reveal grid
+  const grid = document.getElementById('reveal-grid');
+  grid.innerHTML = '';
+  STATE.players.forEach((p, i) => {
+    const roleKey = STATE.roles[i];
+    const def = ROLE_DEFS[roleKey];
+    const div = document.createElement('div');
+    div.className = 'reveal-item' + (roleKey !== 'citizen' ? ` ${roleKey}` : '');
+    div.innerHTML = `
+      <div class="r-icon">${def.icon}</div>
+      <div class="r-name">${p.name}</div>
+      <div class="r-role">${def.label}</div>
+    `;
+    grid.appendChild(div);
+  });
+
+  // Apply scoring
+  applyScores();
+  goTo('s-result');
+}
+
+// ─── SCORING ─────────────────────────────────────────────
+// Police catches thief: Police +3, citizens +1
+// Thief escapes: Thief +3, citizens 0
+function applyScores() {
+  STATE.players.forEach((p, i) => { p.lastDelta = 0; });
+
+  if (STATE.thiefCaught) {
+    STATE.players[STATE.policeIdx].score += 3;
+    STATE.players[STATE.policeIdx].lastDelta = 3;
+    STATE.players.forEach((p, i) => {
+      if (STATE.roles[i] === 'citizen') { p.score += 1; p.lastDelta = 1; }
+    });
+  } else {
+    STATE.players[STATE.thiefIdx].score += 3;
+    STATE.players[STATE.thiefIdx].lastDelta = 3;
+  }
+}
+
+// ─── LEADERBOARD ─────────────────────────────────────────
+function showScores() {
+  document.getElementById('round-badge').textContent = `Round ${STATE.round} Complete`;
+  const sorted = [...STATE.players]
+    .map((p, i) => ({ ...p, origIdx: i }))
+    .sort((a, b) => b.score - a.score);
+
+  const container = document.getElementById('leaderboard');
+  container.innerHTML = '';
+  sorted.forEach((p, rank) => {
+    const div = document.createElement('div');
+    const cls = rank === 0 ? 'first' : rank === 1 ? 'second' : rank === 2 ? 'third' : '';
+    const medals = ['🥇', '🥈', '🥉'];
+    div.className = `lb-row ${cls}`;
+    div.innerHTML = `
+      <div class="lb-rank">${medals[rank] || (rank + 1)}</div>
+      <div class="lb-name">${p.name}</div>
+      ${p.lastDelta > 0 ? `<div class="lb-delta">+${p.lastDelta}</div>` : '<div class="lb-delta" style="opacity:0">+0</div>'}
+      <div class="lb-score">${p.score}</div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function nextRound() {
+  showScores();
+  goTo('s-scores');
+}
+
+// ─── NEXT ROUND ──────────────────────────────────────────
+function startNextRound() {
+  STATE.round++;
+  beginRound();
+}
+
+// ─── END GAME ────────────────────────────────────────────
+function endGame() {
+  const sorted = [...STATE.players]
+    .sort((a, b) => b.score - a.score);
+
+  const container = document.getElementById('final-lb');
+  container.innerHTML = '';
+  sorted.forEach((p, rank) => {
+    const cls = rank === 0 ? 'first' : rank === 1 ? 'second' : rank === 2 ? 'third' : '';
+    const medals = ['🥇', '🥈', '🥉'];
+    const div = document.createElement('div');
+    div.className = `lb-row ${cls}`;
+    div.innerHTML = `
+      <div class="lb-rank">${medals[rank] || (rank + 1)}</div>
+      <div class="lb-name">${p.name}</div>
+      <div class="lb-score">${p.score}</div>
+    `;
+    container.appendChild(div);
+  });
+
+  document.getElementById('winner-text').innerHTML =
+    `🎉 <span style="color:var(--gold);font-family:'Cinzel',serif">${sorted[0].name}</span> reigns supreme!`;
+
+  goTo('s-end');
+}
+
+function resetAll() {
+  STATE.round = 1;
+  STATE.players.forEach(p => { p.score = 0; p.lastDelta = 0; });
+  beginRound();
+}
+
+// ─── SCORES BUTTON WIRING ────────────────────────────────
+// Override Next Round button to start new round
+document.querySelector('#s-scores .btn-gold').onclick = startNextRound;
+
+// ─── INIT ────────────────────────────────────────────────
+// timer circle
+const circ = 2 * Math.PI * 70;
+document.getElementById('timer-circle').style.strokeDasharray = circ;
+document.getElementById('timer-circle').style.strokeDashoffset = 0;
+</script>
+</body>
+</html>
